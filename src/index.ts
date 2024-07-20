@@ -2,31 +2,41 @@ import "dotenv/config";
 import { env } from "process";
 import axios from "axios";
 import { SpotifyUser } from "./Models/SpotifyUser";
+import * as qs from "qs";
 
 const spotifyClientId = env.SPOTIFY_CLIENT_ID;
 const spotifyClientSecret = env.SPOTIFY_CLIENT_SECRET;
+const spotifyUserCode = env.SPOTIFY_USER_CODE;
 
-const getSpotifyAccessToken = async (): Promise<string> => {
+// Some url not very important atm.
+const redirect_uri = "http://localhost:3000";
+
+const getSpotifyAccessToken = async (): Promise<any> => {
 	if (!spotifyClientId || !spotifyClientSecret)
 		throw new Error("SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET are required");
 
-	const url = "https://accounts.spotify.com/api/token";
+	const formData = {
+		code: spotifyUserCode,
+		redirect_uri: redirect_uri,
+		grant_type: "authorization_code",
+	};
+	const queryParams = qs.stringify(formData);
 
 	const data = await axios.post(
-		url,
-		{
-			grant_type: "client_credentials",
-			client_id: spotifyClientId,
-			client_secret: spotifyClientSecret,
-		},
+		`https://accounts.spotify.com/api/token`,
+		queryParams,
 		{
 			headers: {
-				"Content-Type": "application/x-www-form-urlencoded",
+				"content-type": "application/x-www-form-urlencoded",
+				"Authorization":
+					"Basic " +
+					Buffer.from(`${spotifyClientId}:${spotifyClientSecret}`).toString(
+						"base64"
+					),
 			},
 		}
 	);
-
-	return data.data.access_token;
+	return data.data;
 };
 
 const getSpotifyUser = async (accessToken: string): Promise<SpotifyUser> => {
@@ -41,9 +51,10 @@ const getSpotifyUser = async (accessToken: string): Promise<SpotifyUser> => {
 
 export const main = async (): Promise<void> => {
 	try {
+		const tokens = await getSpotifyAccessToken();
+		const spotifyUser = await getSpotifyUser(tokens.access_token);
+		console.log(spotifyUser);
 		debugger;
-		const token = await getSpotifyAccessToken();
-		const spotifyUser = await getSpotifyUser(token);
 	} catch (error) {
 		console.error(error);
 	}

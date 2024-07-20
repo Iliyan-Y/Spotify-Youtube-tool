@@ -13,6 +13,8 @@ SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
 ```
 
+## Personal Account Authorization
+
 - authorize the app to have access to the user profile - [documentation](https://developer.spotify.com/documentation/web-api/tutorials/code-flow)
 - replace YOUR_CLIENT_ID YOUR_REDIRECT and SOME_RANDOM_STRING_OF_16 with your values and paste the link below in the browser
 - you will get prompt to spotify auth page
