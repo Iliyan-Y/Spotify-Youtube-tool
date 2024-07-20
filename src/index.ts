@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { env } from "process";
 import axios from "axios";
+import { SpotifyUser } from "./Models/SpotifyUser";
 
 const spotifyClientId = env.SPOTIFY_CLIENT_ID;
 const spotifyClientSecret = env.SPOTIFY_CLIENT_SECRET;
@@ -28,8 +29,24 @@ const getSpotifyAccessToken = async (): Promise<string> => {
 	return data.data.access_token;
 };
 
+const getSpotifyUser = async (accessToken: string): Promise<SpotifyUser> => {
+	if (!accessToken) throw new Error("accessToken is required");
+	const spotifyUser = await axios.get("https://api.spotify.com/v1/me", {
+		headers: {
+			"Authorization": `Bearer ${accessToken}`,
+		},
+	});
+	return spotifyUser.data as SpotifyUser;
+};
+
 export const main = async (): Promise<void> => {
-	const token = await getSpotifyAccessToken();
+	try {
+		debugger;
+		const token = await getSpotifyAccessToken();
+		const spotifyUser = await getSpotifyUser(token);
+	} catch (error) {
+		console.error(error);
+	}
 };
 
 main();
