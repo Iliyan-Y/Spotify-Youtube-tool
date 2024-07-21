@@ -5,7 +5,7 @@ import * as qs from "qs";
 import { env } from "process";
 
 const spotifyClientId = env.SPOTIFY_CLIENT_ID;
-const redirect_uri = "http://localhost:3000/callback";
+const redirect_uri = env.SPOTIFY_REDIRECT_URL;
 
 router.get("/", function (_, res) {
 	var state = generateRandomString(16);

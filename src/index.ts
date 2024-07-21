@@ -8,7 +8,7 @@ const app = express();
 
 const spotifyClientId = env.SPOTIFY_CLIENT_ID;
 const spotifyClientSecret = env.SPOTIFY_CLIENT_SECRET;
-const redirect_uri = "http://localhost:3000/callback";
+const redirect_uri = env.SPOTIFY_REDIRECT_URL;
 
 const getSpotifyAccessToken = async (code: string): Promise<any> => {
 	if (!spotifyClientId || !spotifyClientSecret)

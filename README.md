@@ -12,6 +12,7 @@ touch .env
 
 SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
+SPOTIFY_REDIRECT_URL=
 ```
 
 once done run the server `npm run start:dev` and navigate to `http:localhost:3000` in your browser
