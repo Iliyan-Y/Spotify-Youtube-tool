@@ -3,20 +3,19 @@ import { env } from "process";
 import axios from "axios";
 import { SpotifyUser } from "./Models/SpotifyUser";
 import * as qs from "qs";
+import * as express from "express";
+const app = express();
 
 const spotifyClientId = env.SPOTIFY_CLIENT_ID;
 const spotifyClientSecret = env.SPOTIFY_CLIENT_SECRET;
-const spotifyUserCode = env.SPOTIFY_USER_CODE;
+const redirect_uri = "http://localhost:3000/callback";
 
-// Some url not very important atm.
-const redirect_uri = "http://localhost:3000";
-
-const getSpotifyAccessToken = async (): Promise<any> => {
+const getSpotifyAccessToken = async (code: string): Promise<any> => {
 	if (!spotifyClientId || !spotifyClientSecret)
 		throw new Error("SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET are required");
 
 	const formData = {
-		code: spotifyUserCode,
+		code,
 		redirect_uri: redirect_uri,
 		grant_type: "authorization_code",
 	};
@@ -49,15 +48,20 @@ const getSpotifyUser = async (accessToken: string): Promise<SpotifyUser> => {
 	return spotifyUser.data as SpotifyUser;
 };
 
-export const main = async (): Promise<void> => {
+export const main = async (code: string): Promise<void> => {
 	try {
-		const tokens = await getSpotifyAccessToken();
+		const tokens = await getSpotifyAccessToken(code);
 		const spotifyUser = await getSpotifyUser(tokens.access_token);
 		console.log(spotifyUser);
-		debugger;
+		setInterval(() => {
+			console.log("Main still Function running");
+		}, 5000);
 	} catch (error) {
 		console.error(error);
 	}
 };
 
-main();
+const routes = require("./routes");
+app.use("/", routes);
+
+app.listen(3000);
