@@ -19,7 +19,7 @@ const spotifyUserMiddleware = (req, res, next) => {
 
 router.get("/", spotifyUserMiddleware, function (_, res) {
 	var state = generateRandomString(16);
-	var scope = "user-read-private user-read-email";
+	var scope = "user-read-private user-read-email user-library-read";
 
 	const params = {
 		response_type: "code",

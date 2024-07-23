@@ -10,6 +10,10 @@ import {
 	SpotifyPlaylist,
 	SpotifyPlaylistShort,
 } from "./Models/SpotifyPlaylist";
+import { Track } from "./Models/Track";
+import { SpotifyTrack } from "./Models/SpotifyTrack";
+import { debug } from "console";
+
 const app = express();
 
 const spotifyClientId = env.SPOTIFY_CLIENT_ID;
@@ -23,11 +27,12 @@ const getSpotifyAccessToken = async (code: string): Promise<string> => {
 	if (!spotifyClientId || !spotifyClientSecret)
 		throw new Error("SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET are required");
 
-	if (spotifyAccessToken && !isTokenExpired(spotifyExpiresIn))
-		return spotifyAccessToken;
+	const expiredToken = isTokenExpired(spotifyExpiresIn);
+
+	if (spotifyAccessToken && !expiredToken) return spotifyAccessToken;
 
 	let formData = {};
-	if (spotifyAccessToken && isTokenExpired(spotifyExpiresIn)) {
+	if (!code || code === "") {
 		formData = {
 			grant_type: "refresh_token",
 			refresh_token: spotifyRefreshToken,
@@ -96,16 +101,52 @@ const getSpotifyPlaylists = async (
 	}));
 };
 
+const getSpotifyFavoritesTracks = async (
+	accessToken: string
+): Promise<Track[]> => {
+	const tracks: Track[] = [];
+	let nextUrl = "https://api.spotify.com/v1/me/tracks";
+
+	while (nextUrl) {
+		const fetchedTracks = await fetchSpotifyTrackBatch(accessToken, nextUrl);
+		tracks.push(...fetchedTracks.tracks);
+		nextUrl = fetchedTracks.next;
+	}
+
+	return tracks;
+};
+
+const fetchSpotifyTrackBatch = async (accessToken: string, url: string) => {
+	const response = await axios.get(url, {
+		headers: {
+			"Authorization": `Bearer ${accessToken}`,
+		},
+		params: {
+			limit: 50,
+		},
+	});
+
+	const tracks: Track[] = response.data.items.map(
+		(item: { track: SpotifyTrack }) => {
+			const { name, artists } = item.track;
+			return {
+				name,
+				artist: artists.map(({ name }) => name).join(" "),
+			};
+		}
+	);
+
+	return { tracks, next: response.data.next };
+};
+
 export const main = async (code: string): Promise<void> => {
 	try {
 		const spotifyUserAccessToken = await getSpotifyAccessToken(code);
-		const spotifyUser = await getSpotifyUser(spotifyUserAccessToken);
-		const userPlaylists = await getSpotifyPlaylists(
-			spotifyUserAccessToken,
-			spotifyUser.id
+		const spotifyFavorites = await getSpotifyFavoritesTracks(
+			spotifyUserAccessToken
 		);
 
-		console.log(userPlaylists);
+		console.log(spotifyFavorites.length, "tracks fetched");
 	} catch (error) {
 		console.error(error);
 	}

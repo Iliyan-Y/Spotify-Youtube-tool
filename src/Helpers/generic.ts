@@ -36,13 +36,7 @@ export const saveTokenToEnv = (tokens: string[]): void => {
 };
 
 export const isTokenExpired = (timestamp: string) => {
-	if (
-		!timestamp ||
-		timestamp === "" ||
-		timestamp === "undefined" ||
-		timestamp === "null"
-	)
-		return true;
+	if (!timestamp) return true;
 
 	const currentTimestamp = moment();
 
