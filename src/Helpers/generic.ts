@@ -1,6 +1,7 @@
 import fs = require("fs");
 import path = require("path");
 import * as moment from "moment";
+import { Track } from "../Models/Track";
 
 export const generateRandomString = (length: number) => {
 	var text = "";
@@ -45,4 +46,9 @@ export const isTokenExpired = (timestamp: string) => {
 	}
 
 	return false;
+};
+
+export const backupPlaylistToJson = (playlist: Track[]) => {
+	const backupFilePath = path.resolve(__dirname, "../../backupPlaylist.json");
+	fs.writeFileSync(backupFilePath, JSON.stringify(playlist, null, 2));
 };

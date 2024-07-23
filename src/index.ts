@@ -4,7 +4,11 @@ import axios from "axios";
 import { SpotifyUser } from "./Models/SpotifyUser";
 import * as qs from "qs";
 import * as express from "express";
-import { isTokenExpired, saveTokenToEnv } from "./Helpers/generic";
+import {
+	backupPlaylistToJson,
+	isTokenExpired,
+	saveTokenToEnv,
+} from "./Helpers/generic";
 import * as moment from "moment";
 import {
 	SpotifyPlaylist,
@@ -147,6 +151,7 @@ export const main = async (code: string): Promise<void> => {
 		);
 
 		console.log(spotifyFavorites.length, "tracks fetched");
+		backupPlaylistToJson(spotifyFavorites);
 	} catch (error) {
 		console.error(error);
 	}

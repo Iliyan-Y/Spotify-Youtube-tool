@@ -133,3 +133,5 @@ dist
 
 # Build distribution directory
 dist/
+
+backupPlaylist.json
