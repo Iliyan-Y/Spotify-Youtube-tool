@@ -6,8 +6,18 @@ import { env } from "process";
 
 const spotifyClientId = env.SPOTIFY_CLIENT_ID;
 const redirect_uri = env.SPOTIFY_REDIRECT_URL;
+const spotifyAccessToken = env.SPOTIFY_ACCESS_TOKEN;
 
-router.get("/", function (_, res) {
+const spotifyUserMiddleware = (req, res, next) => {
+	if (!spotifyAccessToken) {
+		next();
+	} else {
+		main("");
+		res.status(200).json("Spotify user authenticated");
+	}
+};
+
+router.get("/", spotifyUserMiddleware, function (_, res) {
 	var state = generateRandomString(16);
 	var scope = "user-read-private user-read-email";
 
