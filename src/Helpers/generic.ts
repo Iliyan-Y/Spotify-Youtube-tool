@@ -1,5 +1,6 @@
 import fs = require("fs");
 import path = require("path");
+import * as moment from "moment";
 
 export const generateRandomString = (length: number) => {
 	var text = "";
@@ -32,4 +33,22 @@ export const saveTokenToEnv = (tokens: string[]): void => {
 	];
 	envFileContent = newLines.join("\n");
 	fs.writeFileSync(envFilePath, envFileContent, "utf-8");
+};
+
+export const isTokenExpired = (timestamp: string) => {
+	if (
+		!timestamp ||
+		timestamp === "" ||
+		timestamp === "undefined" ||
+		timestamp === "null"
+	)
+		return true;
+
+	const currentTimestamp = moment();
+
+	if (currentTimestamp.isAfter(moment(timestamp))) {
+		return true;
+	}
+
+	return false;
 };
