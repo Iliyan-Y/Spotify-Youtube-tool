@@ -57,11 +57,16 @@ export const getSpotifyAccessToken = async (code: string): Promise<string> => {
 		}
 	);
 
-	saveTokenToEnv([
+	const tokens = [
 		`SPOTIFY_ACCESS_TOKEN=${data.data.access_token}`,
-		`SPOTIFY_REFRESH_TOKEN=${data.data.refresh_token}`,
 		`SPOTIFY_EXPIRES_IN=${moment().add(data.data.expires_in, "s").format()}`,
-	]);
+	];
+
+	if (data.data.refresh_token) {
+		tokens.push(`SPOTIFY_REFRESH_TOKEN=${data.data.refresh_token}`);
+	}
+
+	saveTokenToEnv(tokens);
 
 	return data.data.access_token;
 };
