@@ -7,17 +7,21 @@ import {
 	getSpotifyAccessToken,
 	getSpotifyFavoritesTracks,
 } from "./Services/Spotify";
+import { YoutubeAuthorize } from "./Services/Youtube";
 
 const app = express();
 
 export const main = async (code: string): Promise<void> => {
 	try {
-		const spotifyUserAccessToken = await getSpotifyAccessToken(code);
-		const spotifyFavorites = await getSpotifyFavoritesTracks(
-			spotifyUserAccessToken
-		);
-		console.log(spotifyFavorites.length, "tracks fetched");
-		backupPlaylistToJson(spotifyFavorites);
+		// const spotifyUserAccessToken = await getSpotifyAccessToken(code);
+		// const spotifyFavorites = await getSpotifyFavoritesTracks(
+		// 	spotifyUserAccessToken
+		// );
+		// console.log(spotifyFavorites.length, "tracks fetched");
+		// backupPlaylistToJson(spotifyFavorites);
+		const ytOAuthToken = await YoutubeAuthorize();
+		console.log(ytOAuthToken);
+
 		//todo auth in youtube
 		// create playlist
 		// add the tracks to the playlist
@@ -25,8 +29,9 @@ export const main = async (code: string): Promise<void> => {
 		console.error(error);
 	}
 };
+main("");
 
-const routes = require("./routes");
-app.use("/", routes);
+// const routes = require("./routes");
+// app.use("/", routes);
 
-app.listen(3000);
+// app.listen(3000);

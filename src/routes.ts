@@ -50,7 +50,11 @@ router.get("/callback", async function (req, res) {
 
 	main(code);
 
-	res.status(200).json("Auth successful, playlist manager is running");
+	res.status(200).json("Spotify Auth successful, playlist manager is running");
+});
+
+router.get("/ytcallback", function (req, res) {
+	res.status(200).json("Youtube Auth successful, playlist manager is running");
 });
 
 module.exports = router;
