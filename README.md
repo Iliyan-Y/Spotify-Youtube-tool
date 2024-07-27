@@ -26,11 +26,13 @@ SPOTIFY_REDIRECT_URL=http://localhost:3000/callback
 - When creating the project it will ask you to create credentials - we are going to need user data access. Follow the steps on the google cloud console to create the application. Add scope `Manage your YouTube account` (be careful with this it will grant full scope to the account)
 - Download the client_secret provided from google and add the values to the .env file
 - Create also a test user (in the oAuth consent tab) and provide the email address to the youtube account you want to access
+- Create API key as well
 
 ```
 YT_CLIENT_SECRET=
 YT_CLIENT_ID=
 YT_REDIRECT_URL=http://localhost:3000/ytcallback
+YT_API_KEY=
 ```
 
 once done run the server `npm run start:dev` and navigate to `http:localhost:3000` in your browser

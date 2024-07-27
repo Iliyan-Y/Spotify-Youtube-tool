@@ -4,10 +4,14 @@ import * as qs from "qs";
 import { env } from "process";
 import { getSpotifyAccessToken } from "./Services/Spotify";
 import {
+	addToPlaylist,
 	getYoutubeClient,
 	getYtAuthorizeLink,
 	updateYtClient,
+	ytCreatePlaylist,
+	ytSearchVideo,
 } from "./Services/Youtube";
+import * as playlistJson from "../backupPlaylist.json";
 
 const spotifyClientId = env.SPOTIFY_CLIENT_ID;
 const redirect_uri = env.SPOTIFY_REDIRECT_URL;
@@ -80,6 +84,43 @@ router.get("/ytcallback", async function (req, res) {
 	try {
 		ytClient = await updateYtClient(code, ytClient);
 		res.status(200).json("Yt Auth successful, ready to roll");
+	} catch (error) {
+		console.error(error);
+		res.status(500).json(error);
+	}
+});
+
+const timer = (ms) => new Promise((res) => setTimeout(res, ms));
+const loopPlaylist = async (playlistId: string) => {
+	let counter = 0;
+	for (const song of playlistJson) {
+		const title = `${playlistId}: ${song.artist} - ${song.name}`;
+
+		console.log("adding song:", title);
+		const ytSearchResultId = await ytSearchVideo(ytClient, title);
+		if (ytSearchResultId) {
+			await addToPlaylist(ytClient, playlistId, ytSearchResultId);
+			counter += 1;
+		}
+
+		await timer(1501);
+	}
+	console.log("total songs added:", counter);
+};
+
+// this will handle the migration of the playlists from file
+router.get("/yt/playlist", youtubeUserMiddleware, async (_, res) => {
+	try {
+		const playlistItem = {
+			auth: ytClient,
+			title: "Liked Songs",
+			description: "Playlist migrated from Spotify Liked Songs",
+		};
+		const { id } = await ytCreatePlaylist(playlistItem);
+
+		loopPlaylist(id);
+
+		res.status(200).json("Rolling");
 	} catch (error) {
 		console.error(error);
 		res.status(500).json(error);

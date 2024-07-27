@@ -1,10 +1,9 @@
-const fs = require("fs");
-const readline = require("readline");
 import { google } from "googleapis";
 import { env } from "process";
 import { saveTokenToEnv } from "../Helpers/generic";
 import { OAuth2Client } from "google-auth-library";
-import { String } from "lodash";
+import axios from "axios";
+const youtube = google.youtube("v3");
 const OAuth2 = google.auth.OAuth2;
 
 // If modifying these scopes, delete your previously saved credentials
@@ -22,6 +21,9 @@ export const getYoutubeClient = (): OAuth2Client => {
 	};
 
 	oauth2Client.credentials = credentials;
+	oauth2Client.apiKey = env.YT_API_KEY;
+
+	if (!oauth2Client.apiKey) throw new Error("YT_API_KEY is required");
 	return oauth2Client;
 };
 
@@ -49,36 +51,86 @@ export async function updateYtClient(
 	return oauth2Client;
 }
 
-// /**
-//  * Lists the names and IDs of up to 10 files.
-//  *
-//  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
-//  */
-// function getChannel(auth) {
-// 	const service = google.youtube("v3");
-// 	service.channels.list(
-// 		{
-// 			auth: auth,
-// 			part: "snippet,contentDetails,statistics",
-// 			forUsername: "GoogleDevelopers",
-// 		},
-// 		function (err, response) {
-// 			if (err) {
-// 				console.log("The API returned an error: " + err);
-// 				return;
-// 			}
-// 			const channels = response.data.items;
-// 			if (channels.length == 0) {
-// 				console.log("No channel found.");
-// 			} else {
-// 				console.log(
-// 					"This channel's ID is %s. Its title is '%s', and " +
-// 						"it has %s views.",
-// 					channels[0].id,
-// 					channels[0].snippet.title,
-// 					channels[0].statistics.viewCount
-// 				);
-// 			}
-// 		}
-// 	);
-// }
+interface PlaylistItem {
+	auth: OAuth2Client;
+	title: string;
+	description: string;
+}
+
+export const ytCreatePlaylist = async (playlistItem: PlaylistItem) => {
+	const { auth, title, description } = playlistItem;
+
+	const response = await youtube.playlists.insert({
+		part: ["snippet", "status"],
+		auth,
+		requestBody: {
+			snippet: {
+				title,
+				description,
+				tags: ["PlaylistManager", "API call"],
+				defaultLanguage: "en",
+			},
+			status: {
+				privacyStatus: "private",
+			},
+		},
+	});
+	console.log("Playlist created successfully");
+	return response.data;
+};
+
+export const ytSearchVideo = async (
+	auth: OAuth2Client,
+	searchPhrase: string
+): Promise<string | undefined> => {
+	const response = await axios.get(
+		"https://youtube.googleapis.com/youtube/v3/search",
+		{
+			params: {
+				part: "snippet",
+				maxResults: 1,
+				q: searchPhrase,
+				type: "video",
+				key: auth.apiKey,
+			},
+		}
+	);
+
+	return response.data.items[0].id.videoId;
+};
+
+export const addToPlaylist = async (
+	auth: OAuth2Client,
+	playlistId: string,
+	videoId: string
+) => {
+	const data = {
+		snippet: {
+			playlistId,
+			position: 0,
+			resourceId: {
+				kind: "youtube#video",
+				videoId,
+			},
+		},
+	};
+	const url = "https://youtube.googleapis.com/youtube/v3/playlistItems";
+	const config = {
+		params: {
+			part: "snippet",
+			key: auth.apiKey,
+		},
+		headers: {
+			"Authorization": `Bearer ${auth.credentials.access_token}`,
+			"Accept": "application/json",
+			"Content-Type": "application/json",
+		},
+	};
+
+	try {
+		await axios.post(url, data, config);
+	} catch (error) {
+		console.log(error);
+		console.log(error.data);
+	}
+};
