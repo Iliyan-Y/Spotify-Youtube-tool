@@ -4,13 +4,14 @@ import { google } from "googleapis";
 import { env } from "process";
 import { saveTokenToEnv } from "../Helpers/generic";
 import { OAuth2Client } from "google-auth-library";
+import { String } from "lodash";
 const OAuth2 = google.auth.OAuth2;
 
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/youtube-nodejs-quickstart.json
 const SCOPES = ["https://www.googleapis.com/auth/youtube"];
 
-export async function YoutubeAuthorize(): Promise<OAuth2Client> {
+export const getYoutubeClient = (): OAuth2Client => {
 	const clientSecret = env.YT_CLIENT_SECRET;
 	const clientId = env.YT_CLIENT_ID;
 	const redirectUrl = env.YT_REDIRECT_URL;
@@ -21,45 +22,31 @@ export async function YoutubeAuthorize(): Promise<OAuth2Client> {
 	};
 
 	oauth2Client.credentials = credentials;
-
-	if (credentials.access_token) {
-		console.log("SUCCESSFUL call other yt logic");
-	} else {
-		return getNewToken(oauth2Client);
-	}
 	return oauth2Client;
-}
+};
 
-function getNewToken(oauth2Client: OAuth2Client): OAuth2Client {
+export function getYtAuthorizeLink(oauth2Client: OAuth2Client): string {
 	const authUrl = oauth2Client.generateAuthUrl({
 		access_type: "offline",
 		scope: SCOPES,
 	});
 	console.log("Authorize this app by visiting this url: ", authUrl);
-	const rl = readline.createInterface({
-		input: process.stdin,
-		output: process.stdout,
-	});
-	let response: OAuth2Client;
-	rl.question("Enter the code from that page here: ", function (code) {
-		rl.close();
-		oauth2Client.getToken(code, function (err, token) {
-			if (err) {
-				console.log("Error while trying to retrieve access token", err);
-				throw err;
-			}
-			oauth2Client.credentials = token;
-			saveTokenToEnv([
-				`YT_ACCESS_TOKEN=${token.access_token}`,
-				`YT_REFRESH_TOKEN=${token.refresh_token}`,
-			]);
-			console.log(token);
-			console.log("YT AUTH SUCCESS");
-			response = oauth2Client;
-			//	getChannel(oauth2Client);
-		});
-	});
-	return response;
+	return authUrl;
+}
+
+export async function updateYtClient(
+	code: string,
+	oauth2Client: OAuth2Client
+): Promise<OAuth2Client> {
+	const { tokens } = await oauth2Client.getToken(code);
+
+	oauth2Client.credentials = tokens;
+	saveTokenToEnv([
+		`YT_ACCESS_TOKEN=${tokens.access_token}`,
+		`YT_REFRESH_TOKEN=${tokens.refresh_token}`,
+	]);
+
+	return oauth2Client;
 }
 
 // /**

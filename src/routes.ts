@@ -1,19 +1,25 @@
 const router = require("express").Router();
-import { main } from "./index";
 import { generateRandomString } from "./Helpers/generic";
 import * as qs from "qs";
 import { env } from "process";
+import { getSpotifyAccessToken } from "./Services/Spotify";
+import {
+	getYoutubeClient,
+	getYtAuthorizeLink,
+	updateYtClient,
+} from "./Services/Youtube";
 
 const spotifyClientId = env.SPOTIFY_CLIENT_ID;
 const redirect_uri = env.SPOTIFY_REDIRECT_URL;
 const spotifyAccessToken = env.SPOTIFY_ACCESS_TOKEN;
 
 const spotifyUserMiddleware = (req, res, next) => {
-	if (!spotifyAccessToken) {
+	if (spotifyAccessToken) {
+		res.status(200).json("Spotify user authenticated");
 		next();
 	} else {
-		main("");
-		res.status(200).json("Spotify user authenticated");
+		// todo refactor for spotify
+		res.status(500).json("Spotify auth error - implement middleware - todo");
 	}
 };
 
@@ -39,22 +45,45 @@ router.get("/callback", async function (req, res) {
 	var state = req.query.state || null;
 
 	if (!state || !code) {
-		res.redirect(
-			"/#" +
-				qs.stringify({
-					error: "state_mismatch",
-					message: "state or code mismatch",
-				})
-		);
+		res.status(500).json("state or code mismatch");
 	}
 
-	main(code);
-
-	res.status(200).json("Spotify Auth successful, playlist manager is running");
+	try {
+		await getSpotifyAccessToken(code);
+		res
+			.status(200)
+			.json("Spotify Auth successful, playlist manager is running");
+	} catch (error) {
+		console.error(error);
+		res.status(500).json(error);
+	}
 });
 
-router.get("/ytcallback", function (req, res) {
-	res.status(200).json("Youtube Auth successful, playlist manager is running");
+//todo: create spotify endpoints for the getSpotifyFavoritesTracks
+let ytClient = getYoutubeClient();
+const youtubeUserMiddleware = (req, res, next) => {
+	if (ytClient.credentials.access_token) {
+		next();
+	} else {
+		const authUrl = getYtAuthorizeLink(ytClient);
+		res.redirect(authUrl);
+	}
+};
+
+router.get("/ytcallback", async function (req, res) {
+	var code = req.query.code || null;
+
+	if (!code) {
+		res.status(500).json("no code provided");
+	}
+
+	try {
+		ytClient = await updateYtClient(code, ytClient);
+		res.status(200).json("Yt Auth successful, ready to roll");
+	} catch (error) {
+		console.error(error);
+		res.status(500).json(error);
+	}
 });
 
 module.exports = router;
