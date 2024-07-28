@@ -1,8 +1,13 @@
 import { google } from "googleapis";
 import { env } from "process";
-import { saveTokenToEnv } from "../Helpers/generic";
+import {
+	backupPlaylistToJson,
+	saveTokenToEnv,
+	timer,
+} from "../Helpers/generic";
 import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
+import { Track } from "../Models/Track";
 const youtube = google.youtube("v3");
 const OAuth2 = google.auth.OAuth2;
 
@@ -95,6 +100,8 @@ export const ytSearchVideo = async (
 			},
 		}
 	);
+	if (!response.data || !response.data.items || response.data.items.length <= 0)
+		return undefined;
 
 	return response.data.items[0].id.videoId;
 };
@@ -133,4 +140,34 @@ export const addToPlaylist = async (
 		console.log(error);
 		console.log(error.data);
 	}
+};
+
+export const migratePlaylist = async (
+	ytClient: OAuth2Client,
+	playlistId: string,
+	playlist: Track[]
+) => {
+	console.log("Transfer to playlist with Id: ", playlistId);
+	let counter = 0;
+
+	while (playlist.length > 0) {
+		const song = playlist.pop();
+		const title = `${counter}: ${song.artist} - ${song.name}`;
+		console.log("adding song:", title);
+		try {
+			const ytSearchResultId = await ytSearchVideo(ytClient, title);
+			if (ytSearchResultId) {
+				await addToPlaylist(ytClient, playlistId, ytSearchResultId);
+				counter += 1;
+			}
+			await timer(1501);
+		} catch (error) {
+			playlist.push(song);
+			backupPlaylistToJson(playlist, playlistId);
+			console.error("An error occurred:", error);
+			break;
+		}
+	}
+
+	console.log(`${counter} of ${playlist.length} transferred`);
 };

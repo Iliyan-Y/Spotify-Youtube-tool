@@ -48,7 +48,17 @@ export const isTokenExpired = (timestamp: string) => {
 	return false;
 };
 
-export const backupPlaylistToJson = (playlist: Track[]) => {
-	const backupFilePath = path.resolve(__dirname, "../../backupPlaylist.json");
+export const backupPlaylistToJson = (
+	playlist: Track[],
+	playlistName?: string
+) => {
+	const fileName =
+		playlistName || `BackupPlaylist-${moment().format("YYYY-MM-DD")}`;
+	const backupFilePath = path.resolve(
+		__dirname,
+		`../../PlaylistBackup/${fileName}.json`
+	);
 	fs.writeFileSync(backupFilePath, JSON.stringify(playlist, null, 2));
 };
+
+export const timer = (ms) => new Promise((res) => setTimeout(res, ms));
