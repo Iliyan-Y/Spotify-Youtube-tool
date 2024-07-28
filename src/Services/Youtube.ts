@@ -8,7 +8,6 @@ import {
 import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
 import { Track } from "../Models/Track";
-import { debug } from "console";
 const youtube = google.youtube("v3");
 const OAuth2 = google.auth.OAuth2;
 
@@ -158,7 +157,7 @@ export const migratePlaylist = async (
 	while (playlist.length > 0) {
 		const song = playlist.pop();
 		const title = `${song.artist} ${song.name}`;
-		console.log("adding song ${counter}:", title);
+		console.log(`adding song ${counter}:`, title);
 		try {
 			const ytSearchResultId = await ytSearchVideo(ytClient, title);
 			if (ytSearchResultId) {
@@ -180,5 +179,5 @@ export const migratePlaylist = async (
 			break;
 		}
 	}
-	console.log(`${counter} of ${playlist.length} transferred`);
+	console.log(`${counter} of ${playlist.length + counter} transferred`);
 };
