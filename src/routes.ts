@@ -44,8 +44,8 @@ router.get("/", spotifyUserMiddleware, function (_, res) {
 });
 
 router.get("/callback", async function (req, res) {
-	var code = req.query.code || null;
-	var state = req.query.state || null;
+	const code = req.query.code || null;
+	const state = req.query.state || null;
 
 	if (!state || !code) {
 		res.status(500).json("state or code mismatch");
@@ -90,14 +90,17 @@ router.get("/ytcallback", async function (req, res) {
 });
 
 // todo: refactor
-router.get("/yt/playlist", youtubeUserMiddleware, async (_, res) => {
+router.get("/yt/playlist", youtubeUserMiddleware, async (req, res) => {
 	try {
 		const playlistItem = {
 			auth: ytClient,
 			title: "Liked Songs",
 			description: "Playlist migrated from Spotify Liked Songs",
 		};
-		const { id } = await ytCreatePlaylist(playlistItem);
+
+		const id = req.query.id
+			? req.query.id
+			: (await ytCreatePlaylist(playlistItem)).id;
 
 		migratePlaylist(ytClient, id, playlistJson);
 

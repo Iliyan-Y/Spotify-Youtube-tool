@@ -8,12 +8,17 @@ import {
 import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
 import { Track } from "../Models/Track";
+import { debug } from "console";
 const youtube = google.youtube("v3");
 const OAuth2 = google.auth.OAuth2;
 
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/youtube-nodejs-quickstart.json
-const SCOPES = ["https://www.googleapis.com/auth/youtube"];
+const SCOPES = [
+	"https://www.googleapis.com/auth/youtube",
+	"https://www.googleapis.com/auth/youtube.force-ssl",
+	"https://www.googleapis.com/auth/youtubepartner",
+];
 
 export const getYoutubeClient = (): OAuth2Client => {
 	const clientSecret = env.YT_CLIENT_SECRET;
@@ -110,7 +115,7 @@ export const addToPlaylist = async (
 	auth: OAuth2Client,
 	playlistId: string,
 	videoId: string
-) => {
+): Promise<boolean> => {
 	const data = {
 		snippet: {
 			playlistId,
@@ -133,15 +138,16 @@ export const addToPlaylist = async (
 			"Content-Type": "application/json",
 		},
 	};
-
 	try {
 		await axios.post(url, data, config);
+		return true;
 	} catch (error) {
-		console.log(error);
-		console.log(error.data);
+		console.log("ERROR ADDING title to playlist:", error);
+		return false;
 	}
 };
 
+//todo: refactor error handling
 export const migratePlaylist = async (
 	ytClient: OAuth2Client,
 	playlistId: string,
@@ -149,15 +155,21 @@ export const migratePlaylist = async (
 ) => {
 	console.log("Transfer to playlist with Id: ", playlistId);
 	let counter = 0;
-
 	while (playlist.length > 0) {
 		const song = playlist.pop();
-		const title = `${counter}: ${song.artist} - ${song.name}`;
-		console.log("adding song:", title);
+		const title = `${song.artist} ${song.name}`;
+		console.log("adding song ${counter}:", title);
 		try {
 			const ytSearchResultId = await ytSearchVideo(ytClient, title);
 			if (ytSearchResultId) {
-				await addToPlaylist(ytClient, playlistId, ytSearchResultId);
+				const isAdded = await addToPlaylist(
+					ytClient,
+					playlistId,
+					ytSearchResultId
+				);
+				if (!isAdded) {
+					throw new Error("Failed to add to playlist");
+				}
 				counter += 1;
 			}
 			await timer(1501);
@@ -168,6 +180,5 @@ export const migratePlaylist = async (
 			break;
 		}
 	}
-
 	console.log(`${counter} of ${playlist.length} transferred`);
 };
